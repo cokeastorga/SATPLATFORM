@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
 
   function comenzar() {
-    goto('/practice');
+    goto('/tipo-test');
   }
 </script>
 

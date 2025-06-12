@@ -39,6 +39,7 @@
 	},
 	"dependencies": {
 		"@google/generative-ai": "^0.24.1",
+		"katex": "^0.16.22",
 		"lucide-svelte": "^0.514.0"
 	}
 }

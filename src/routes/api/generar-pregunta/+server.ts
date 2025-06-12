@@ -69,14 +69,25 @@ export async function POST({ request }) {
         try {
             // Asegúrate de que la respuesta sea un JSON válido antes de parsear
             // A veces Gemini puede añadir texto extra, por lo que buscamos el primer y último corchete
-            const jsonMatch = responseText.match(/\[[\s\S]*\]|\{[\s\S]*\}/); // Busca arrays o objetos JSON
-            if (jsonMatch) {
-                // Si Gemini devuelve un array JSON, lo parseamos directamente
-                parsedResponse = JSON.parse(jsonMatch[0]);
-            } else {
-                console.error("No se encontró JSON válido en la respuesta de Gemini:", responseText);
-                return json({ error: 'Respuesta de Gemini no contiene un JSON válido', raw: responseText }, { status: 500 });
-            }
+           const jsonMatch = responseText.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
+if (jsonMatch) {
+  // Limpieza preventiva: dobla las barras invertidas para que LaTeX no rompa el JSON
+ const textoCrudo = jsonMatch[0];
+
+// 🔧 Intenta corregir el escape excesivo de Gemini
+const textoLimpio = textoCrudo
+  .replace(/\\\\/g, '\\') // convierte \\\\ en \ (dobles barras en una)
+  .replace(/\\"/g, '"');   // corrige comillas escapadas excesivamente
+  try {
+    parsedResponse = JSON.parse(textoLimpio);
+  } catch (e) {
+    console.error('❌ Error al parsear JSON tras limpieza:', e);
+    return json({ error: 'JSON parse error after cleanup', raw: textoLimpio }, { status: 500 });
+  }
+} else {
+  console.error("No se encontró JSON válido en la respuesta de Gemini:", responseText);
+  return json({ error: 'Respuesta de Gemini no contiene un JSON válido', raw: responseText }, { status: 500 });
+}
         } catch (jsonParseError) {
             console.error("Error al parsear el JSON de Gemini:", jsonParseError);
             console.error("Respuesta cruda que intentó parsear:", responseText);

@@ -2,6 +2,9 @@
   // Importa la interfaz PreguntaSAT desde tu archivo de tipos
   // Asegúrate de que la ruta sea correcta si tu interfaz está en otro lugar
   import type { PreguntaSAT } from '$lib/types/question'; 
+  import MathText from '$lib/components/MathText.svelte';
+
+  import TextOrMath from '$lib/components/TextOrMath.svelte';
 
   // Ahora tipamos 'pregunta' usando la interfaz PreguntaSAT
   export let pregunta: PreguntaSAT;
@@ -19,6 +22,7 @@
     }
   }
 
+
   
 
   // Las propiedades reactivas que tenías están bien
@@ -27,15 +31,15 @@
 </script>
 
 <div class="mb-6 p-6 border border-gray-200 rounded-xl shadow-sm bg-white animate-fade-in">
-  {#if pregunta.pasaje}
+  {#if pregunta.pasaje && pregunta.pasaje.trim().length > 0}
     <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800 rounded-md">
       <h4 class="font-semibold text-blue-700 mb-2">Pasaje de Lectura:</h4>
-      <p class="text-sm leading-relaxed">{pregunta.pasaje}</p>
+      <TextOrMath content={pregunta.pasaje} />
     </div>
   {/if}
 
   <h3 class="font-semibold text-gray-800 text-lg mb-4">
-    {numero}. {pregunta.enunciado}
+    {numero}. <TextOrMath content={pregunta.enunciado} />
   </h3>
 
   <div class="space-y-2">
@@ -49,12 +53,11 @@
               : respuesta === opcion
                 ? 'border-red-500 bg-red-50 text-red-700'
                 : ''
-            : ''}
-        `}
+            : ''}`}
         on:click={() => seleccionarOpcion(opcion)}
         disabled={testFinalizado}
       >
-        {opcion}
+        <TextOrMath content={opcion} inline />
         {#if testFinalizado && opcion === pregunta.respuestaCorrecta}
           <span class="ml-2">✅</span>
         {:else if testFinalizado && respuesta === opcion && respuesta !== pregunta.respuestaCorrecta}
@@ -69,7 +72,7 @@
       <p class="mb-1">
         <strong>{esCorrecta ? '✅ ¡Correcto!' : '❌ Incorrecto.'}</strong>
       </p>
-      <p><em>Explicación:</em> {pregunta.explicacion}</p>
+      <p><em>Explicación:</em> <TextOrMath content={pregunta.explicacion} /></p>
     </div>
   {/if}
 </div>

@@ -9,7 +9,23 @@
   import type { PreguntaSAT } from '$lib/types/question';
   import { generarPreguntaValida } from '$lib/ia/generarTest';
   import Timer from '$lib/components/Timer.svelte';
+  import { page } from '$app/stores';
+import { onMount } from 'svelte';
+
   
+let modo = 'liviano'; // por defecto
+let cantidad = 5;
+
+onMount(() => {
+  const modoParam = $page.url.searchParams.get('modo');
+  if (modoParam === 'ensayo' || modoParam === 'desafio') {
+    modo = modoParam;
+  }
+
+  // Establecer cantidad base según modo
+  if (modo === 'ensayo') cantidad = 20;
+  if (modo === 'desafio') cantidad = 49; // este valor se ajustará por materia más adelante
+});
 
 
   let paso = 1;
@@ -26,110 +42,70 @@
   let cargando = false;
   let preguntaActual = 0;
 
-  async function iniciarGeneracionProgresiva() {
-    while (preguntas.length < maxPreguntas) {
-      try {
-        cargando = true;
-        const nueva = await generarPreguntaValida(materiaSeleccionada, nivelSeleccionado);
-        preguntas = [...preguntas, nueva];
-      } catch (e) {
-        console.warn('🔁 Detenido: no se pudo generar una pregunta válida:', e);
-        break;
-      } finally {
-        cargando = false;
-      }
+  async function generarSiguientePregunta() {
+  if (preguntas.length >= maxPreguntas) return;
+
+  cargando = true;
+  try {
+    const nueva = await generarPreguntaValida(materiaSeleccionada, nivelSeleccionado);
+    if (nueva) {
+      preguntas = [...preguntas, nueva];
+      preguntaActual = preguntas.length - 1;
     }
+  } catch (error) {
+    console.error('❌ Error generando nueva pregunta:', error);
+  } finally {
+    cargando = false;
   }
+}
 
 
-  // --- Lógica de Pre-generación ---
-
-  async function asegurarBufferPreguntas(cantidadInicial: number = 3) {
-    if (paso === 3 && !cargando) {
-      const preguntasExistentes = preguntas.length;
-      const preguntasDisponiblesEnBuffer = preguntas.length - preguntaActual;
-
-      const preguntasFaltantesParaBuffer = maxPreguntas - preguntasDisponiblesEnBuffer;
-
-      const preguntasAGenerar = Math.min(
-        preguntasFaltantesParaBuffer,
-        cantidadInicial
-      );
-
-      if (preguntasAGenerar > 0) {
-        cargando = true;
-        console.log(`Generando ${preguntasAGenerar} preguntas para rellenar el buffer.`);
-        for (let i = 0; i < preguntasAGenerar; i++) {
-          try {
-            const nueva = await generarPreguntaValida(materiaSeleccionada, nivelSeleccionado);
-            if (nueva) {
-              preguntas.push(nueva);
-            } else {
-              console.warn('⚠️ Se intentó generar una pregunta, pero se recibió null.');
-              break;
-            }
-          } catch (error) {
-            console.error('❌ Error generando pregunta para el buffer:', error);
-            break;
-          }
-        }
-        cargando = false;
-      }
-    }
-  }
-
+function calcularTiempoPorPregunta(cantidad: number): number {
+  // Puedes ajustar la lógica según dificultad real
+  if (cantidad <= 5) return 1 * 60 * cantidad; // 1 minuto por pregunta
+  if (cantidad <= 20) return 1.25 * 60 * cantidad; // 1:15 min por pregunta
+  return 1.45 * 60 * cantidad; // Para tests largos, hasta 1:30 min por pregunta
+}
 
 
   // Bloque reactivo para disparar la generación inicial de preguntas
   // cuando el usuario llega al Paso 3 y el array de preguntas está vacío.
-$: if (paso === 3 && preguntas.length === 0) {
+$: if (paso === 3 && preguntas.length === 0 && !cargando) {
   const materia = materiaSeleccionada.toLowerCase().trim();
+
   if (materia === 'math' || materia === 'matemáticas') {
-    tiempoTotalSegundos = 64 * 60;
-    maxPreguntas = 44;
-    puntajeMaximo = 800;
+    if (modo === 'liviano') maxPreguntas = 5;
+    else if (modo === 'ensayo') maxPreguntas = 20;
+    else if (modo === 'desafio') maxPreguntas = 44;
   } else if (materia === 'reading' || materia === 'reading and writing') {
-    tiempoTotalSegundos = 70 * 60;
-    maxPreguntas = 49;
-    puntajeMaximo = 800;
+    if (modo === 'liviano') maxPreguntas = 5;
+    else if (modo === 'ensayo') maxPreguntas = 20;
+    else if (modo === 'desafio') maxPreguntas = 49;
   }
 
-  iniciarGeneracionProgresiva();
+  tiempoTotalSegundos = calcularTiempoPorPregunta(maxPreguntas);
+  puntajeMaximo = 800;
+
+  generarSiguientePregunta(); // solo una
 }
+
+
+
 
 
 
   // --- Lógica de Navegación ---
 
   async function siguientePregunta() {
-    // Caso 1: Hay más preguntas YA DISPONIBLES en el array 'preguntas'.
-    if (preguntaActual < preguntas.length - 1) {
-      preguntaActual++; // Simplemente avanza al siguiente índice
-      asegurarBufferPreguntas(); // Llama a precargar en segundo plano
-    } else if (preguntas.length < maxPreguntas) {
-      // Caso 2: Estamos en la última pregunta cargada, pero aún no hemos alcanzado el límite total.
-      // Primero, aseguramos que el buffer se intente rellenar (esto podría cambiar 'preguntas.length')
-      cargando = true; // Muestra spinner si no estaba ya visible
-      await asegurarBufferPreguntas(2); // Espera a que termine la generación
-
-      // Después de la generación, verifica si ahora hay una nueva pregunta disponible.
-      if (preguntaActual < preguntas.length - 1) {
-        preguntaActual++; // Si hay, avanza.
-      } else {
-        // Esto significa que se intentó generar, pero no se añadió una nueva pregunta
-        // (quizás porque ya se alcanzó el maxPreguntas  o hubo un error en la generación).
-        // En este caso, el flujo debería llevar a finalizar el test o mostrar un mensaje.
-        console.log('No se pudieron cargar más preguntas o se alcanzó el límite. Mostrar botón de finalizar.');
-        // Opcional: Podrías forzar el test a finalizar si no se pueden generar más preguntas
-        // finalizarTest();
-      }
-      cargando = false; // Oculta spinner
-    } else {
-      // Caso 3: Hemos llegado al final de las preguntas generadas y también al límite total.
-      console.log('Se ha llegado al final del test. Mostrar botón de Finalizar.');
-      // La UI ya debería mostrar el botón de finalizar test.
-    }
+  if (preguntaActual < preguntas.length - 1) {
+    preguntaActual++;
+  } else if (preguntas.length < maxPreguntas) {
+    await generarSiguientePregunta();
+  } else {
+    console.log('✅ Se alcanzó el número máximo de preguntas. Mostrar botón de finalizar.');
   }
+}
+
 
   function anteriorPregunta() {
     if (preguntaActual > 0) {
@@ -144,18 +120,7 @@ $: if (paso === 3 && preguntas.length === 0) {
     paso += 1;
     // La generación de preguntas inicial se dispara automáticamente cuando paso === 3
     // gracias al bloque reactivo ':$'
-    if (paso === 3) {
-      const materia = materiaSeleccionada.toLowerCase().trim();
-      if (materia === 'math' || materia === 'matemáticas') {
-        tiempoTotalSegundos = 64 * 60;
-        maxPreguntas = 44;
-        puntajeMaximo = 800;
-      } else if (materia === 'reading' || materia === 'reading and writing') {
-        tiempoTotalSegundos = 70 * 60;
-        maxPreguntas = 49;
-        puntajeMaximo = 800;
-      }
-    }
+   
   }
 
   function pasoAnterior() {
@@ -209,13 +174,30 @@ $: if (paso === 3 && preguntas.length === 0) {
     <p class="text-center text-sm text-gray-600 mb-4">
       Pregunta {preguntaActual + 1} de {maxPreguntas}
     </p>
+    <p class="text-center text-sm text-gray-600 mb-2">
+  Modo seleccionado: <strong class="capitalize">{modo}</strong>
+</p>
+<p class="text-center text-xs text-gray-500 mb-2">
+  Tiempo total asignado: {Math.floor(tiempoTotalSegundos / 60)} minutos
+</p>
+
     {#if tiempoTotalSegundos > 0}
     <Timer tiempoTotal={tiempoTotalSegundos} on:tiempoFinalizado={finalizarTest} />
     {/if}
 
-    <QuestionCard pregunta={preguntas[preguntaActual]} numero={preguntaActual + 1} {testFinalizado}
-      bind:respuestasUsuario={respuestasUsuario} onRespuesta={(idx, r)=> respuestasUsuario[idx] = r}
-      />
+ {#if preguntas.length > 0}
+  {#if preguntas[preguntaActual]}
+    <QuestionCard
+      pregunta={preguntas[preguntaActual]}
+      numero={preguntaActual + 1}
+      {testFinalizado}
+      bind:respuestasUsuario={respuestasUsuario}
+      onRespuesta={(idx, r) => respuestasUsuario[idx] = r}
+    />
+  {:else}
+    <p>⏳ Cargando pregunta...</p>
+  {/if}
+{/if}
 
       <div class="mt-6 flex justify-between items-center">
         {#if preguntaActual > 0}

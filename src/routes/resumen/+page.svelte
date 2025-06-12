@@ -45,35 +45,35 @@ onMount(() => {
 
 
   function verResultados() {
-  goto('/resultados', {
-    state: { ...history.state?.resultadosTest }
-  });
+  goto('/resultados');
 }
 
 
   function volverAIntentar() {
-    goto('/practice');
+    goto('/tipo-test');
   }
 
-  function colorPuntaje() {
-    return puntaje > 1100
-      ? 'text-green-600'
-      : puntaje > 800
-      ? 'text-yellow-500'
-      : 'text-red-500';
-  }
+ function colorPuntaje() {
+  return porcentaje >= 90
+    ? 'text-green-700'
+    : porcentaje >= 70
+    ? 'text-yellow-500'
+    : 'text-red-500';
+}
 
-  function mensajePuntaje() {
-    return puntaje > 1100
-      ? '¡Excelente desempeño!'
-      : puntaje > 800
-      ? 'Buen intento, sigue practicando.'
-      : 'Puedes mejorar, ¡no te rindas!';
-  }
+function mensajePuntaje() {
+  return porcentaje >= 90
+    ? '¡Excelente desempeño!'
+    : porcentaje >= 70
+    ? 'Buen intento, sigue practicando.'
+    : 'Puedes mejorar, ¡no te rindas!';
+}
 
-  function emoji() {
-    return puntaje > 1100 ? '🏅' : puntaje > 800 ? '🎖️' : '📘';
-  }
+function emoji() {
+  return porcentaje >= 90 ? '🏅' : porcentaje >= 70 ? '🎖️' : '📘';
+}
+
+
 
   function customFadeScale(node, { delay = 0, duration = 400 }) {
   return {
@@ -115,12 +115,14 @@ onMount(() => {
               stroke="#e5e7eb"
               stroke-width="15"
             />
-            <circle
+           <circle
               cx="80"
               cy="80"
               r="70"
               fill="none"
-              stroke={puntaje > 1100 ? '#16a34a' : puntaje > 800 ? '#eab308' : '#ef4444'}
+              stroke={
+                porcentaje >= 90 ? '#16a34a' : porcentaje >= 70 ? '#eab308' : '#ef4444'
+              }
               stroke-width="15"
               stroke-linecap="round"
               stroke-dasharray="440"

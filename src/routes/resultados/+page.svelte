@@ -23,7 +23,8 @@
     preguntas = data.preguntas;
     respuestasUsuario = data.respuestasUsuario;
     respuestasCorrectas = data.respuestasCorrectas;
-    puntaje = Math.round((respuestasCorrectas / preguntas.length) * 1000 + 400);
+    puntaje = Math.round((respuestasCorrectas / preguntas.length) * 600 + 200);
+
   } catch (error) {
     console.error('Error leyendo resultados:', error);
     goto('/');
@@ -36,9 +37,9 @@
 });
 
 
-  function esCorrecta(i: number) {
-    return respuestasUsuario[i + 1] === preguntas[i].respuestaCorrecta;
-  }
+function esCorrecta(i: number) {
+  return respuestasUsuario[i] === preguntas[i].respuestaCorrecta;
+}
 
   function volverResumen() {
     goto('/resumen');
@@ -89,8 +90,9 @@
                 <p class="text-sm mb-1">
                   <span class="font-medium">Tu respuesta:</span>
                   <span class={esCorrecta(i) ? 'text-green-700 font-bold' : 'text-red-700 font-bold'}>
-                    {respuestasUsuario[i + 1] || 'Sin responder'}
-                  </span>
+                  {respuestasUsuario[i] || 'Sin responder'}
+                </span>
+
                 </p>
 
                 {#if !esCorrecta(i)}
