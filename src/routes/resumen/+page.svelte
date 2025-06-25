@@ -50,7 +50,7 @@ onMount(() => {
 
 
   function volverAIntentar() {
-    goto('/tipo-test');
+    goto('/practice');
   }
 
  function colorPuntaje() {

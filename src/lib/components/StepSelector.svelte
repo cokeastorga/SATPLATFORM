@@ -1,16 +1,14 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-import { BookOpen, PenLine, Calculator, Brain } from 'lucide-svelte';
+  import { BookOpen, Calculator } from 'lucide-svelte';
 
   export let seleccion = '';
   const dispatch = createEventDispatcher();
 
- const materias = [
-  { nombre: 'Reading', icon: BookOpen },
-  { nombre: 'Writing', icon: PenLine },
-  { nombre: 'Math - No Calculator', icon: Brain },
-  { nombre: 'Math - Calculator', icon: Calculator }
-];
+  const materias = [
+    { nombre: 'Math', icon: Calculator },
+    { nombre: 'Reading & Writing', icon: BookOpen }
+  ];
 
   function continuar() {
     if (seleccion) dispatch('next');
