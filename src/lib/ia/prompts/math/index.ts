@@ -1,13 +1,13 @@
-import { generateAlgebraPrompt } from './algebra';
 import { generateGeometryPrompt } from './geometry';
-import { generateProblemSolvingPrompt } from './problemSolving';
+import { generateAlgebraPrompt } from './algebra';
 import { generateAdvancedMathPrompt } from './advancedMath';
+import { generateProblemSolvingPrompt } from './problemSolving';
 
 const generators = [
-  generateAlgebraPrompt,
   generateGeometryPrompt,
-  generateProblemSolvingPrompt,
-  generateAdvancedMathPrompt
+  generateAlgebraPrompt,
+  generateAdvancedMathPrompt,
+  generateProblemSolvingPrompt
 ];
 
 export function getRandomMathPrompt(dificultad: string): string {

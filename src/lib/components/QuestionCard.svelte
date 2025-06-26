@@ -16,27 +16,38 @@
 
   function seleccionarOpcion(opcion: string) {
     if (!testFinalizado) {
-      // Importante: tu `onRespuesta` en +page.svelte usa `preguntaActual` como índice,
-      // que es 0-based. Aquí `numero` es 1-based, así que ajustamos.
-      onRespuesta(numero - 1, opcion); // Usa numero - 1 para que el índice coincida con el array 'preguntas'
+   
+      onRespuesta(numero - 1, opcion);
     }
   }
 
 
   
 
-  // Las propiedades reactivas que tenías están bien
+
   $: respuesta = respuestasUsuario[numero - 1]; 
   $: esCorrecta = respuesta === pregunta.respuestaCorrecta;
 </script>
 
+
 <div class="mb-6 p-6 border border-gray-200 rounded-xl shadow-sm bg-white animate-fade-in">
+  {#if pregunta.categoria}
+  <p class="text-sm text-gray-500 mb-2">📘 Categoría: <strong>{pregunta.categoria}</strong></p>
+{/if}
   {#if pregunta.pasaje && pregunta.pasaje.trim().length > 0}
     <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800 rounded-md">
       <h4 class="font-semibold text-blue-700 mb-2">Pasaje de Lectura:</h4>
       <TextOrMath content={pregunta.pasaje} />
     </div>
   {/if}
+  {#if pregunta.formula && pregunta.formula.trim().length > 0}
+  <div class="mb-4 px-4 py-3 bg-gray-50 rounded-md overflow-x-auto">
+    <h4 class="font-semibold text-gray-700 mb-2">Fórmula:</h4>
+    <MathText content={pregunta.formula} />
+  </div>
+{/if}
+
+
 
   <h3 class="font-semibold text-gray-800 text-lg mb-4">
     {numero}. <TextOrMath content={pregunta.enunciado} />
@@ -103,6 +114,8 @@
 
 button {
   word-break: break-word;
+  white-space: normal;
 }
+
 
 </style>

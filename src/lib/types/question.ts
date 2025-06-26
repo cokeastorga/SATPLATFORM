@@ -4,4 +4,6 @@ export interface PreguntaSAT {
   respuestaCorrecta: string;
   explicacion: string;
   pasaje?: string;
+  formula?: string; 
+  categoria?: string; 
 }

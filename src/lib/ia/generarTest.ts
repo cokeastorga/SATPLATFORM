@@ -4,10 +4,8 @@ import { generateInformationIdeasPrompt } from "$lib/ia/prompts/reading/informat
 import { generateStandardConventionsPrompt } from "$lib/ia/prompts/reading/standardConventions";
 import { generateExpressionIdeasPrompt } from "$lib/ia/prompts/reading/expressionIdeas";
 
-// Helper para delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Error personalizado
 class QuotaExceededError extends Error {
   retryAfterSeconds: number;
   constructor(message: string, retryAfterSeconds: number) {
@@ -27,7 +25,6 @@ function normalizarMateria(m: string): string {
   return map[m.toLowerCase().trim()] ?? m.toLowerCase().trim();
 }
 
-
 function getPromptReadingAndWriting(dificultad: string): string {
   const generadores = [
     generateCraftStructurePrompt,
@@ -35,7 +32,6 @@ function getPromptReadingAndWriting(dificultad: string): string {
     generateStandardConventionsPrompt,
     generateExpressionIdeasPrompt
   ];
-
   const generador = generadores[Math.floor(Math.random() * generadores.length)];
   return generador(dificultad);
 }
@@ -49,29 +45,24 @@ function mapDifficulty(level: string): string {
   return map[level.toLowerCase().trim()] ?? 'medium';
 }
 
-// Generar pregunta individual
 export async function generarUnaPregunta(materia: string, dificultad: string): Promise<PreguntaSAT | null> {
-const materiaNormalizada = normalizarMateria(materia);
+  const materiaNormalizada = normalizarMateria(materia);
   const dificultadPrompt = mapDifficulty(dificultad);
 
   try {
     const response = await fetch('/api/generar-pregunta', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ materia: materiaNormalizada, dificultad: dificultadPrompt }),
-
-  });
-
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ materia: materiaNormalizada, dificultad: dificultadPrompt })
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-
       if (response.status === 429 && errorData.details) {
         const match = errorData.details.match(/"retryDelay":"(\d+)s"/);
         const retryAfter = match ? parseInt(match[1], 10) : 30;
         throw new QuotaExceededError(`Cuota excedida. Reintenta en ${retryAfter}s.`, retryAfter);
       }
-
       throw new Error(`Error ${response.status}: ${errorData.error || 'Error desconocido'}`);
     }
 
@@ -85,6 +76,7 @@ const materiaNormalizada = normalizarMateria(materia);
 
     const p = Array.isArray(resultado) ? resultado[0] : resultado;
 
+    // Validación base
     if (
       !p ||
       typeof p.pregunta !== 'string' ||
@@ -95,6 +87,7 @@ const materiaNormalizada = normalizarMateria(materia);
       return null;
     }
 
+    // Opciones limpiadas
     const opcionesLimpias = Array.isArray(p.opciones)
       ? p.opciones.map((opt: any) => String(opt).trim()).filter(Boolean)
       : Object.values(p.opciones).map((opt: any) => String(opt).trim()).filter(Boolean);
@@ -106,6 +99,7 @@ const materiaNormalizada = normalizarMateria(materia);
       return null;
     }
 
+    // Ensamblar objeto PreguntaSAT
     const preguntaFormateada: PreguntaSAT = {
       enunciado: p.pregunta.trim(),
       opciones: opcionesLimpias,
@@ -113,11 +107,15 @@ const materiaNormalizada = normalizarMateria(materia);
       explicacion:
         typeof p.explicacion === 'string' && p.explicacion.trim().length > 5
           ? p.explicacion.trim()
-          : '⚠️ Explicación no disponible.',
+          : '⚠️ Explicación no disponible.'
     };
 
     if (typeof p.pasaje === 'string' && p.pasaje.trim().length > 0) {
       preguntaFormateada.pasaje = p.pasaje.trim();
+    }
+
+    if (typeof p.formula === 'string' && p.formula.trim().length > 0) {
+      preguntaFormateada.formula = p.formula.trim();
     }
 
     return preguntaFormateada;
@@ -125,13 +123,11 @@ const materiaNormalizada = normalizarMateria(materia);
     if (err instanceof QuotaExceededError) {
       throw err;
     }
-
     console.error('❌ Error generando pregunta:', err);
     return null;
   }
 }
 
-// Función con reintentos y backoff
 export async function generarPreguntaValida(materia: string, dificultad: string): Promise<PreguntaSAT> {
   const maxIntentos = 5;
   let intentos = 0;
@@ -140,7 +136,6 @@ export async function generarPreguntaValida(materia: string, dificultad: string)
   while (intentos < maxIntentos) {
     try {
       const pregunta = await generarUnaPregunta(materia, dificultad);
-
       if (
         pregunta &&
         typeof pregunta.enunciado === 'string' &&
