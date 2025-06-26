@@ -50,7 +50,7 @@
 
   function configurarTest() {
     const materia = materiaSeleccionada.toLowerCase().trim();
-    if (materia === 'math' || materia === 'matemáticas') {
+    if (materia === 'matematicas') {
       maxPreguntas = modo === 'ensayo' ? 20 : modo === 'desafio' ? 44 : 5;
     } else {
       maxPreguntas = modo === 'ensayo' ? 20 : modo === 'desafio' ? 49 : 5;

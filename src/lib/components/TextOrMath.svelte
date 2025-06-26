@@ -1,3 +1,4 @@
+<!-- src/lib/components/TextOrMath.svelte -->
 <script lang="ts">
   import MathText from './MathText.svelte';
 
@@ -5,7 +6,7 @@
   export let inline: boolean = false;
 
   function contieneLatex(texto: string) {
-    return /\\\(|\\\[|\\frac|\\sqrt|\\pi|\\sum|\\int/.test(texto);
+    return /\\\(|\\\[|\\frac|\\sqrt|\\pi|\\sum|\\int|\^/.test(texto);
   }
 </script>
 
@@ -13,8 +14,8 @@
   <MathText {content} {inline} />
 {:else}
   {#if inline}
-    <span>{content}</span>
+    <span class="text-base">{content}</span>
   {:else}
-    <p>{content}</p>
+    <p class="text-base">{content}</p>
   {/if}
 {/if}

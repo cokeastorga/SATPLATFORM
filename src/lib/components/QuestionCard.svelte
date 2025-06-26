@@ -92,4 +92,17 @@
   .animate-fade-in {
     animation: fade-in 0.3s ease-out forwards;
   }
+
+  .katex-content {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 0.125rem 0;
+}
+
+button {
+  word-break: break-word;
+}
+
 </style>

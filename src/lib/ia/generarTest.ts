@@ -17,6 +17,17 @@ class QuotaExceededError extends Error {
   }
 }
 
+function normalizarMateria(m: string): string {
+  const map: Record<string, string> = {
+    math: 'matematicas',
+    matemáticas: 'matematicas',
+    'reading and writing': 'reading and writing',
+    rw: 'reading and writing'
+  };
+  return map[m.toLowerCase().trim()] ?? m.toLowerCase().trim();
+}
+
+
 function getPromptReadingAndWriting(dificultad: string): string {
   const generadores = [
     generateCraftStructurePrompt,
@@ -40,36 +51,17 @@ function mapDifficulty(level: string): string {
 
 // Generar pregunta individual
 export async function generarUnaPregunta(materia: string, dificultad: string): Promise<PreguntaSAT | null> {
-  const materiaNormalizada = materia.toLowerCase().trim();
+const materiaNormalizada = normalizarMateria(materia);
   const dificultadPrompt = mapDifficulty(dificultad);
-
-  const prompt =
-    materiaNormalizada === 'reading and writing'
-      ? getPromptReadingAndWriting(dificultadPrompt)
-      : `
-You are an SAT ${materiaNormalizada} question generator. Generate ONE multiple-choice question in JSON format:
-
-{
-  "pregunta": "Question text.",
-  "opciones": ["Option A", "Option B", "Option C", "Option D"],
-  "respuesta": "Correct Answer",
-  "explicacion": "Step-by-step explanation."
-}
-
-Rules:
-- Return only valid JSON (no markdown, no extra text).
-- Use double quotes and escape properly.
-- The answer MUST match one of the options.
-- Explanation must be complete and correct.
-- Difficulty: ${dificultadPrompt}
-`.trim();
 
   try {
     const response = await fetch('/api/generar-pregunta', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-    });
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ materia: materiaNormalizada, dificultad: dificultadPrompt }),
+
+  });
+
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

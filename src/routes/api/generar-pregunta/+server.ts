@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '$env/static/private';
 import { json } from '@sveltejs/kit';
+import { getRandomReadingPrompt } from '$lib/ia/prompts/reading';
+import { getRandomMathPrompt } from '$lib/ia/prompts/math';
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -14,10 +16,23 @@ const safetySettings = [
 
 export async function POST({ request }) {
   try {
-    const { prompt } = await request.json();
+    const { materia, dificultad } = await request.json();
 
-    if (!prompt || typeof prompt !== 'string') {
-      return json({ error: 'Prompt es requerido y debe ser texto' }, { status: 400 });
+    if (!materia  || typeof materia  !== 'string' || !dificultad) {
+      return json({ error: 'materia y dificultad son requeridos' }, { status: 400 });
+    }
+
+       // Obtener prompt según materia
+    let prompt: string;
+    switch (materia.toLowerCase()) {
+      case 'matematicas':
+        prompt = getRandomMathPrompt(dificultad);
+        break;
+      case 'reading and writing':
+         prompt = getRandomReadingPrompt(dificultad);
+        break;
+      default:
+        return json({ error: `Materia no soportada: ${materia}` }, { status: 400 });
     }
 
     const generationConfig = {
