@@ -7,7 +7,7 @@ import { generateExpressionIdeasPrompt } from './expressionIdeas';
  * Devuelve un prompt aleatorio de la sección Reading & Writing,
  * mezclando uniformemente entre las cuatro categorías.
  */
-export function getPromptReadingAndWriting(dificultad: string): string {
+export function getRandomReadingPrompt(dificultad: string): string {
   const generadores = [
     generateCraftStructurePrompt,
     generateInformationIdeasPrompt,

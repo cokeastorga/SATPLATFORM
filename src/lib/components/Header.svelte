@@ -2,12 +2,21 @@
   import { page } from '$app/stores';
   import { toggleDarkMode, darkMode } from '$lib/stores/theme';
   import { onMount } from 'svelte';
+  import { fade, scale } from 'svelte/transition';
+
 
   // Guardamos preferencia del usuario (si aplica)
   onMount(() => {
-    const stored = localStorage.getItem('dark');
-    if (stored) darkMode.set(stored === 'true');
-  });
+  const stored = localStorage.getItem('dark');
+  const isDark = stored === 'true';
+  darkMode.set(isDark);
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+});
+
 </script>
 
 <header class="w-full bg-white dark:bg-gray-900 shadow-md sticky top-0 z-50">
@@ -21,11 +30,22 @@
       <a href="/practice" class="text-sm text-gray-700 dark:text-gray-200 hover:underline">Práctica</a>
     </nav>
 
-    <button
-      on:click={toggleDarkMode}
-      class="bg-blue-600 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-700 transition"
-    >
-      🌓 Modo { $darkMode ? 'Claro' : 'Oscuro' }
-    </button>
+   <button
+  on:click={toggleDarkMode}
+  class="flex items-center gap-2 bg-blue-600 text-white text-sm px-4 py-1.5 rounded-full hover:bg-blue-700 transition"
+>
+  <span class="text-lg"  transition:scale={{ duration: 200 }}>
+  {#if $darkMode}
+    ☀️
+  {:else}
+    🌙
+  {/if}
+</span>
+
+  <span class="hidden sm:inline">
+    { $darkMode ? 'Modo Claro' : 'Modo Oscuro' }
+  </span>
+</button>
+
   </div>
 </header>

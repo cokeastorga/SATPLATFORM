@@ -27,7 +27,7 @@ export async function POST({ request }) {
       case 'matematicas':
         prompt = getRandomMathPrompt(dificultad);
         break;
-      case 'reading and writing':
+      case 'reading & writing':
         prompt = getRandomReadingPrompt(dificultad);
         break;
       default:
