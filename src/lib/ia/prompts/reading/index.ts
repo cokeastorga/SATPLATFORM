@@ -15,6 +15,6 @@ export function getRandomReadingPrompt(dificultad: string): string {
     generateExpressionIdeasPrompt
   ];
 
-  const generadorAleatorio = generadores[Math.floor(Math.random() * generadores.length)];
-  return generadorAleatorio(dificultad);
+  const generador = generadores[Math.floor(Math.random() * generadores.length)];
+  return generador(dificultad);
 }

@@ -1,8 +1,12 @@
 import type { PreguntaSAT } from '$lib/types/question';
-import { generateCraftStructurePrompt } from "$lib/ia/prompts/reading/craftStructure";
-import { generateInformationIdeasPrompt } from "$lib/ia/prompts/reading/informationIdeas";
-import { generateStandardConventionsPrompt } from "$lib/ia/prompts/reading/standardConventions";
-import { generateExpressionIdeasPrompt } from "$lib/ia/prompts/reading/expressionIdeas";
+import { generateCraftStructurePrompt } from '$lib/ia/prompts/reading/craftStructure';
+import { generateInformationIdeasPrompt } from '$lib/ia/prompts/reading/informationIdeas';
+import { generateStandardConventionsPrompt } from '$lib/ia/prompts/reading/standardConventions';
+import { generateExpressionIdeasPrompt } from '$lib/ia/prompts/reading/expressionIdeas';
+import { generateAlgebraPrompt } from '$lib/ia/prompts/math/algebra';
+import { generateAdvancedMathPrompt } from '$lib/ia/prompts/math/advancedMath';
+import { generateGeometryPrompt } from '$lib/ia/prompts/math/geometry';
+import { generateProblemSolvingPrompt } from '$lib/ia/prompts/math/problemSolving';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -15,23 +19,36 @@ class QuotaExceededError extends Error {
   }
 }
 
-function normalizarMateria(m: string): string {
-  const map: Record<string, string> = {
+function normalizarMateria(m: string): PreguntaSAT['materia'] {
+  const map: Record<string, PreguntaSAT['materia']> = {
     math: 'matematicas',
     matemáticas: 'matematicas',
+    matematicas: 'matematicas',
     'reading and writing': 'reading and writing',
+    'reading & writing': 'reading and writing',
     rw: 'reading and writing'
   };
-  return map[m.toLowerCase().trim()] ?? m.toLowerCase().trim();
+  const normalized = map[m.toLowerCase().trim()];
+  if (!normalized || !['matematicas', 'reading and writing'].includes(normalized)) {
+    throw new Error(`Materia inválida: ${m}`);
+  }
+  return normalized;
 }
 
-function getPromptReadingAndWriting(dificultad: string): string {
-  const generadores = [
+function getPrompt(materia: PreguntaSAT['materia'], dificultad: string): string {
+  const readingPrompts = [
     generateCraftStructurePrompt,
     generateInformationIdeasPrompt,
     generateStandardConventionsPrompt,
     generateExpressionIdeasPrompt
   ];
+  const mathPrompts = [
+    generateAlgebraPrompt,
+    generateAdvancedMathPrompt,
+    generateGeometryPrompt,
+    generateProblemSolvingPrompt
+  ];
+  const generadores = materia === 'matematicas' ? mathPrompts : readingPrompts;
   const generador = generadores[Math.floor(Math.random() * generadores.length)];
   return generador(dificultad);
 }
@@ -39,21 +56,49 @@ function getPromptReadingAndWriting(dificultad: string): string {
 function mapDifficulty(level: string): string {
   const map: Record<string, string> = {
     easy: 'easy',
+    fácil: 'easy',
     medium: 'medium',
-    hard: 'challenging'
+    medio: 'medium',
+    hard: 'challenging',
+    difícil: 'challenging'
   };
   return map[level.toLowerCase().trim()] ?? 'medium';
 }
 
+function normalizarOpciones(opciones: string[] | Record<string, string>): [string, string, string, string] | null {
+  const opcionesArray = Array.isArray(opciones)
+    ? opciones
+    : Object.values(opciones).map(opt => String(opt).trim());
+
+  const opcionesLimpias = opcionesArray
+    .map(opt => String(opt).trim())
+    .filter(opt => opt.length > 0);
+
+  if (opcionesLimpias.length !== 4 || new Set(opcionesLimpias).size !== 4) {
+    console.warn('❌ Opciones inválidas: deben ser 4 opciones únicas.', opcionesLimpias);
+    return null;
+  }
+
+  return opcionesLimpias as [string, string, string, string];
+}
+
 export async function generarUnaPregunta(materia: string, dificultad: string): Promise<PreguntaSAT | null> {
-  const materiaNormalizada = normalizarMateria(materia);
+  let materiaNormalizada: PreguntaSAT['materia'];
+  try {
+    materiaNormalizada = normalizarMateria(materia);
+  } catch (err) {
+    console.error('❌ Error en materia:', err.message);
+    return null;
+  }
+
   const dificultadPrompt = mapDifficulty(dificultad);
+  const prompt = getPrompt(materiaNormalizada, dificultadPrompt);
 
   try {
     const response = await fetch('/api/generar-pregunta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ materia: materiaNormalizada, dificultad: dificultadPrompt })
+      body: JSON.stringify({ materia: materiaNormalizada, dificultad: dificultadPrompt, prompt })
     });
 
     if (!response.ok) {
@@ -79,35 +124,68 @@ export async function generarUnaPregunta(materia: string, dificultad: string): P
     // Validación base
     if (
       !p ||
-      typeof p.pregunta !== 'string' ||
+      typeof p.pregunta !== 'string' || p.pregunta.trim().length === 0 ||
       (!Array.isArray(p.opciones) && typeof p.opciones !== 'object') ||
-      typeof p.respuesta !== 'string'
+      typeof p.respuesta !== 'string' || p.respuesta.trim().length === 0 ||
+      typeof p.explicacion !== 'string' || p.explicacion.trim().length === 0 ||
+      typeof p.categoria !== 'string' ||
+      ![
+        'Algebra',
+        'Passport to Advanced Math',
+        'Geometry and Measurement',
+        'Problem Solving and Data Analysis',
+        'Craft and Structure',
+        'Information and Ideas',
+        'Standard English Conventions',
+        'Expression of Ideas'
+      ].includes(p.categoria)
     ) {
       console.warn('❌ Pregunta malformada o incompleta:', p);
       return null;
     }
 
-    // Opciones limpiadas
-    const opcionesLimpias = Array.isArray(p.opciones)
-      ? p.opciones.map((opt: any) => String(opt).trim()).filter(Boolean)
-      : Object.values(p.opciones).map((opt: any) => String(opt).trim()).filter(Boolean);
+    const opcionesLimpias = normalizarOpciones(p.opciones);
+    if (!opcionesLimpias) {
+      return null;
+    }
 
-    const respuesta = String(p.respuesta).trim();
-
+    const respuesta = p.respuesta.trim();
     if (!opcionesLimpias.includes(respuesta)) {
-      console.warn('❌ La respuesta no coincide con ninguna opción.');
+      console.warn('❌ La respuesta no coincide con ninguna opción:', respuesta, opcionesLimpias);
+      return null;
+    }
+
+    // Validar longitud del pasaje según la materia y categoría
+    let pasajeValido = true;
+    if (typeof p.pasaje === 'string' && p.pasaje.trim().length > 0) {
+      const wordCount = p.pasaje.trim().split(/\s+/).length;
+      if (materiaNormalizada === 'reading and writing') {
+        const isStandardConventions = p.categoria === 'Standard English Conventions';
+        const expectedWordCount = isStandardConventions ? [20, 50] : [80, 120];
+        if (wordCount < expectedWordCount[0] || wordCount > expectedWordCount[1]) {
+          console.warn(`❌ Pasaje inválido: longitud fuera del rango (${expectedWordCount[0]}–${expectedWordCount[1]} palabras).`);
+          pasajeValido = false;
+        }
+      } else if (materiaNormalizada === 'matematicas') {
+        if (wordCount < 20 || wordCount > 50) {
+          console.warn('❌ Pasaje inválido: longitud fuera del rango (20–50 palabras) para matemáticas.');
+          pasajeValido = false;
+        }
+      }
+    }
+
+    if (!pasajeValido) {
       return null;
     }
 
     // Ensamblar objeto PreguntaSAT
     const preguntaFormateada: PreguntaSAT = {
-      enunciado: p.pregunta.trim(),
+      enunciado: p.pregunta.trim() as NonEmptyString,
       opciones: opcionesLimpias,
-      respuestaCorrecta: respuesta,
-      explicacion:
-        typeof p.explicacion === 'string' && p.explicacion.trim().length > 5
-          ? p.explicacion.trim()
-          : '⚠️ Explicación no disponible.'
+      respuestaCorrecta: respuesta as NonEmptyString,
+      explicacion: p.explicacion.trim() as NonEmptyString,
+      materia: materiaNormalizada,
+      categoria: p.categoria as PreguntaSAT['categoria']
     };
 
     if (typeof p.pasaje === 'string' && p.pasaje.trim().length > 0) {
@@ -138,11 +216,13 @@ export async function generarPreguntaValida(materia: string, dificultad: string)
       const pregunta = await generarUnaPregunta(materia, dificultad);
       if (
         pregunta &&
-        typeof pregunta.enunciado === 'string' &&
-        Array.isArray(pregunta.opciones) &&
+        typeof pregunta.enunciado === 'string' && pregunta.enunciado.length > 0 &&
         pregunta.opciones.length === 4 &&
-        typeof pregunta.respuestaCorrecta === 'string' &&
-        pregunta.opciones.includes(pregunta.respuestaCorrecta)
+        typeof pregunta.respuestaCorrecta === 'string' && pregunta.respuestaCorrecta.length > 0 &&
+        pregunta.opciones.includes(pregunta.respuestaCorrecta) &&
+        typeof pregunta.explicacion === 'string' && pregunta.explicacion.length > 0 &&
+        ['matematicas', 'reading and writing'].includes(pregunta.materia) &&
+        pregunta.categoria
       ) {
         return pregunta;
       } else {

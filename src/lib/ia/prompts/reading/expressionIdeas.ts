@@ -1,27 +1,37 @@
 export function generateExpressionIdeasPrompt(dificultad: string): string {
   return `
-You are an expert SAT test generator for the "Expression of Ideas" category.
+You are an expert SAT test generator. Create ONE multiple-choice question in the "Expression of Ideas" category of the SAT Reading and Writing section.
 
-Generate one multiple-choice question that includes:
-- A short passage (50–100 words) that requires revision.
-- A question focused on improving clarity, conciseness, or logical progression.
-- Exactly four answer options in an array format.
-- The correct answer (must match exactly one of the options).
-- A brief but clear explanation.
+📌 Requirements:
+- "pasaje": A 80–120 word formal, academic passage about science, history, or social studies. The passage must allow for a question about improving organization, clarity, transitions, or rhetorical effectiveness.
+- "pregunta": One question targeting expression, such as combining sentences, clarifying transitions, or improving word choice.
+- "opciones": Exactly four plausible and unique answers (as plain text).
+- "respuesta": The exact text of one correct option.
+- "explicacion": 2–5 sentences in plain English explaining why the correct choice improves the passage and why the others don’t.
+- "categoria": Must be "Expression of Ideas".
 
-Respond ONLY in valid JSON format like this:
+⚠️ Output Instructions:
+- Respond ONLY with a valid JSON object.
+- Do NOT include headings, notes, explanations, markdown, or comments.
+- The response MUST:
+  - Start with \`{\`
+  - End with \`}\`
+  - Use only double quotes (")
+  - No markdown, no commentary
+  - Be valid JSON with no trailing commas
+  - "respuesta": Must be the exact text string of one of the four options. Do not use labels like "Option A", use the full answer.
+
+
+Use this exact format:
 {
-  "pasaje": "Short paragraph needing revision.",
-  "pregunta": "Which revision most improves clarity?",
-  "opciones": ["Revision A", "Revision B", "Revision C", "Revision D"],
-  "respuesta": "Revision A",
-  "explicacion": "Option A improves clarity and removes redundancy."
+  "pasaje": "A formal, well-structured passage...",
+  "pregunta": "Which revision best improves the clarity of the sentence?",
+  "opciones": ["Option 1", "Option 2", "Option 3", "Option 4"],
+  "respuesta": "Option 1",
+  "explicacion": "Clear explanation of why it's correct.",
+  "categoria": "Expression of Ideas"
 }
 
-Rules:
-- Use only double quotes.
-- Escape all internal quotes properly.
-- Difficulty level: ${dificultad}
-- Output ONLY the JSON object — no markdown, no extra text.
+💡 Difficulty: "${dificultad}" (choose from "easy", "medium", or "hard").
 `.trim();
 }

@@ -1,28 +1,37 @@
 export function generateCraftStructurePrompt(dificultad: string): string {
   return `
-You are an expert SAT test generator focused on the "Craft and Structure" category of the Reading and Writing section.
+You are an expert SAT test generator. Create ONE multiple-choice question in the "Craft and Structure" category of the Reading and Writing section.
 
-Generate one multiple-choice question that includes:
+📌 Requirements:
+- "pasaje": A passage of 80–120 words (science, history, or social studies). Use proper spacing. No merged words.
+- "pregunta": One question testing purpose, structure, tone, or word meaning.
+- "opciones": Four concise, unique answer choices (plain text).
+- "respuesta": The exact text matching one of the options.
+- "explicacion": 2–5 sentences in plain English explaining the correct choice and the incorrect ones.
+- "categoria": Must be "Craft and Structure".
+- Difficulty: Use "${dificultad}" level.
 
-- A short literary or informational passage (80–120 words).
-- One question about vocabulary in context, purpose, tone, or structure.
-- Exactly four answer options in an array format.
-- The correct answer (must match exactly one of the options).
-- A brief but clear explanation.
+⚠️ Output Rules:
+- Respond ONLY with a valid JSON object.
+- The response MUST:
+  - Start with '{'
+  - End with '}'
+  - Use only double quotes (")
+  - No markdown, no commentary
+  - Contain NO introductory text, comments, explanations, markdown or code blocks.
+  - Be fully valid JSON.
+  - "respuesta": Must be the exact text string of one of the four options. Do not use labels like "Option A", use the full answer.
 
-Respond ONLY in valid JSON format, like this:
+- Use only ASCII-safe characters and double quotes.
+
+✅ Example output format:
 {
-  "pasaje": "Text passage goes here.",
-  "pregunta": "What is the main purpose of the second paragraph?",
-  "opciones": ["To introduce a new character.", "To explain a conflict.", "To provide background.", "To describe a setting."],
-  "respuesta": "To provide background.",
-  "explicacion": "The second paragraph gives historical context relevant to the topic."
+  "pasaje": "Formal passage text...",
+  "pregunta": "What is the author’s main purpose?",
+  "opciones": ["A", "B", "C", "D"],
+  "respuesta": "A",
+  "explicacion": "Explanation here...",
+  "categoria": "Craft and Structure"
 }
-
-Rules:
-- Use only double quotes.
-- Escape all internal quotes properly.
-- Use a ${dificultad} level of difficulty.
-- Output ONLY the JSON object — no markdown, no commentary.
 `.trim();
 }

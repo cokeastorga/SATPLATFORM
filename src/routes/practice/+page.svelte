@@ -17,8 +17,9 @@
   let materiaSeleccionada: string = '';
   let nivelSeleccionado: string = '';
   let tiempoTotalSegundos: number = 0;
-  let maxPreguntas: number = 3;
+  let maxPreguntas: number = 5;
   let puntajeMaximo: number = 800;
+  let errorMensaje: string | null = null;
 
   let preguntas: Array<PreguntaSAT> = [];
   let respuestasUsuario: Record<number, string> = {};
@@ -26,36 +27,46 @@
   let cargando = false;
   let preguntaActual = 0;
 
+  function normalizarMateriaUI(materia: string): PreguntaSAT['materia'] {
+    const normalized = materia.toLowerCase().trim();
+    return normalized === 'matemáticas' || normalized === 'matematicas' ? 'matematicas' : 'reading and writing';
+  }
+
   async function generarSiguientePregunta() {
     if (preguntas.length >= maxPreguntas) return;
     cargando = true;
+    errorMensaje = null;
     try {
-      const nueva = await generarPreguntaValida(materiaSeleccionada, nivelSeleccionado);
+      const materia = normalizarMateriaUI(materiaSeleccionada);
+      const nueva = await generarPreguntaValida(materia, nivelSeleccionado);
       if (nueva) {
         preguntas = [...preguntas, nueva];
         preguntaActual = preguntas.length - 1;
+      } else {
+        errorMensaje = 'No se pudo generar la pregunta. Intenta de nuevo.';
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        errorMensaje = `Cuota excedida. Por favor, espera ${error.retryAfterSeconds} segundos e intenta de nuevo.`;
+      } else {
+        errorMensaje = 'Error al generar la pregunta. Intenta de nuevo más tarde.';
+      }
       console.error('❌ Error generando nueva pregunta:', error);
     } finally {
       cargando = false;
     }
   }
 
-  function calcularTiempoPorPregunta(cantidad: number): number {
-    if (cantidad <= 5) return 1 * 60 * cantidad;
-    if (cantidad <= 20) return 1.25 * 60 * cantidad;
-    return 1.45 * 60 * cantidad;
+  function calcularTiempoPorPregunta(cantidad: number, materia: PreguntaSAT['materia']): number {
+    const minutosPorPregunta = materia === 'matematicas' ? 1.5 : 1.18;
+    return Math.round(minutosPorPregunta * 60 * cantidad);
   }
 
   function configurarTest() {
-    const materia = materiaSeleccionada.toLowerCase().trim();
-    if (materia === 'matematicas') {
-      maxPreguntas = modo === 'ensayo' ? 20 : modo === 'desafio' ? 44 : 5;
-    } else {
-      maxPreguntas = modo === 'ensayo' ? 20 : modo === 'desafio' ? 49 : 5;
-    }
-    tiempoTotalSegundos = calcularTiempoPorPregunta(maxPreguntas);
+    const materia = normalizarMateriaUI(materiaSeleccionada);
+    maxPreguntas = modo === 'ensayo' ? 20 : modo === 'desafio' ? 44 : 5;
+    tiempoTotalSegundos = calcularTiempoPorPregunta(maxPreguntas, materia);
+    puntajeMaximo = 800;
     generarSiguientePregunta();
   }
 
@@ -89,7 +100,7 @@
 
   function seleccionarModo(tipo: string) {
     modo = tipo;
-    cantidad = tipo === 'ensayo' ? 20 : tipo === 'desafio' ? 49 : 5;
+    cantidad = tipo === 'ensayo' ? 20 : tipo === 'desafio' ? 44 : 5;
     siguientePaso();
   }
 
@@ -104,7 +115,8 @@
       respuestasCorrectas,
       maxPreguntas,
       puntajeMaximo,
-      materiaSeleccionada
+      materiaSeleccionada,
+      categoriaPorPregunta: preguntas.map(p => p.categoria)
     };
     localStorage.setItem('resultadosTest', JSON.stringify(resultadosTest));
     goto('/resumen');
@@ -115,15 +127,14 @@
 
 <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-200 flex items-start justify-center px-4 py-16">
   <div class="bg-white shadow-xl rounded-3xl p-8 sm:p-10 w-full max-w-2xl">
-
     {#if paso === 0}
       <div class="text-center mb-8">
         <h1 class="text-4xl font-extrabold text-blue-700 mb-2">🧠 Instrucciones del Test SAT</h1>
         <p class="text-gray-600 text-lg">Lee cuidadosamente antes de comenzar tu práctica</p>
       </div>
       <ul class="space-y-4 text-gray-700 text-base leading-relaxed mb-8">
-        <li class="flex items-start gap-3"><span class="text-green-500 text-xl">✅</span> Selecciona una materia (Matemáticas o Reading & Writing).</li>
-        <li class="flex items-start gap-3"><span class="text-green-500 text-xl">✅</span> Elige un nivel: Liviano, Medio o Difícil.</li>
+        <li class="flex items-start gap-3"><span class="text-green-500 text-xl">✅</span> Selecciona una materia (Matemáticas o Reading and Writing).</li>
+        <li class="flex items-start gap-3"><span class="text-green-500 text-xl">✅</span> Elige un nivel: Fácil, Medio o Difícil.</li>
         <li class="flex items-start gap-3"><span class="text-green-500 text-xl">✅</span> Responde dentro del tiempo asignado por sección.</li>
         <li class="flex items-start gap-3"><span class="text-green-500 text-xl">✅</span> Usa el botón <strong>Siguiente</strong> para avanzar.</li>
         <li class="flex items-start gap-3"><span class="text-green-500 text-xl">✅</span> Al final, recibirás un puntaje y retroalimentación detallada.</li>
@@ -146,30 +157,51 @@
         </button>
         <button on:click={() => seleccionarModo('desafio')} class="bg-white border border-red-200 shadow-md rounded-2xl p-6 hover:bg-red-50 transition">
           <h2 class="text-2xl font-semibold text-red-700 mb-2">Desafío SAT</h2>
-          <p class="text-gray-500">Máxima cantidad de preguntas reales.</p>
+          <p class="text-gray-500">Simulación completa del SAT (44 preguntas).</p>
         </button>
       </div>
 
     {:else if paso === 2}
       <h1 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-6 text-center">Paso 2: Elige una materia</h1>
-      <StepSelector bind:seleccion={materiaSeleccionada} on:next={siguientePaso} />
+      <StepSelector
+        bind:seleccion={materiaSeleccionada}
+        opciones={['Matemáticas', 'Reading and Writing']}
+        on:next={siguientePaso}
+        on:back={pasoAnterior}
+      />
 
     {:else if paso === 3}
       <h1 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-6 text-center">Paso 3: Elige nivel de dificultad</h1>
-      <DifficultySelector bind:seleccion={nivelSeleccionado} on:next={siguientePaso} on:back={pasoAnterior} />
+      <DifficultySelector
+        bind:seleccion={nivelSeleccionado}
+        opciones={['Fácil', 'Medio', 'Difícil']}
+        on:next={siguientePaso}
+        on:back={pasoAnterior}
+      />
 
     {:else if paso === 4}
       <h1 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-6 text-center">Paso 4: Responde las preguntas</h1>
+
+      {#if errorMensaje}
+        <p class="text-center text-red-500 mb-4">{errorMensaje}</p>
+        <div class="text-center mt-4">
+          <button class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors" on:click={configurarTest}>Reintentar</button>
+        </div>
+      {/if}
 
       {#if cargando && preguntas.length === 0}
         <LoadingSpinner mensaje="🧠 Generando las primeras preguntas con IA..." />
 
       {:else if preguntas.length > 0}
         <div class="w-full bg-gray-200 rounded-full h-3 mb-6">
-          <div class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: {((preguntaActual + 1) / maxPreguntas  * 100)}%"></div>
+          <div class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: {((preguntaActual + 1) / maxPreguntas * 100)}%"></div>
         </div>
         <p class="text-center text-sm text-gray-600 mb-4">Pregunta {preguntaActual + 1} de {maxPreguntas}</p>
         <p class="text-center text-sm text-gray-600 mb-2">Modo seleccionado: <strong class="capitalize">{modo}</strong></p>
+        <p class="text-center text-sm text-gray-600 mb-2">Materia: <strong>{materiaSeleccionada}</strong></p>
+        {#if preguntas[preguntaActual]?.categoria}
+          <p class="text-center text-sm text-gray-600 mb-2">Categoría: <strong>{preguntas[preguntaActual].categoria}</strong></p>
+        {/if}
         <p class="text-center text-xs text-gray-500 mb-2">Tiempo total asignado: {Math.floor(tiempoTotalSegundos / 60)} minutos</p>
 
         {#if tiempoTotalSegundos > 0}
@@ -178,7 +210,18 @@
 
         {#if preguntas[preguntaActual]}
           <div transition:fade={{ duration: 300 }}>
-            <QuestionCard pregunta={preguntas[preguntaActual]} numero={preguntaActual + 1} {testFinalizado} bind:respuestasUsuario={respuestasUsuario} onRespuesta={(idx, r) => { if (typeof idx === 'number') respuestasUsuario[idx] = r; }} />
+            <QuestionCard
+              pregunta={preguntas[preguntaActual]}
+              numero={preguntaActual + 1}
+              {testFinalizado}
+              bind:respuestasUsuario
+              on:respuesta={(e) => {
+                const { idx, respuesta } = e.detail;
+                if (typeof idx === 'number' && typeof respuesta === 'string') {
+                  respuestasUsuario[idx] = respuesta;
+                }
+              }}
+            />
           </div>
         {:else}
           <p class="text-sm text-gray-500 text-center mt-2">⏳ Cargando pregunta...</p>
@@ -187,6 +230,8 @@
         <div class="mt-6 flex justify-between items-center">
           {#if preguntaActual > 0}
             <button class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg shadow-sm hover:bg-gray-400 transition-colors" on:click={anteriorPregunta}>Anterior</button>
+          {:else}
+            <span></span>
           {/if}
 
           {#if preguntaActual < preguntas.length - 1}
@@ -204,9 +249,11 @@
 
       {:else}
         <p class="text-center text-red-500">No se pudieron cargar las preguntas. Intenta de nuevo más tarde.</p>
+        <div class="text-center mt-4">
+          <button class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors" on:click={configurarTest}>Reintentar</button>
+        </div>
       {/if}
     {/if}
-
   </div>
 </div>
 
