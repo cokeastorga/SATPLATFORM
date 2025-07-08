@@ -3,32 +3,31 @@ export function generateExpressionIdeasPrompt(dificultad: string): string {
 You are an expert SAT test generator. Create ONE multiple-choice question in the "Expression of Ideas" category of the SAT Reading and Writing section.
 
 📌 Requirements:
-- "pasaje": A 80–120 word formal, academic passage about science, history, or social studies. The passage must allow for a question about improving organization, clarity, transitions, or rhetorical effectiveness.
-- "pregunta": One question targeting expression, such as combining sentences, clarifying transitions, or improving word choice.
-- "opciones": Exactly four plausible and unique answers (as plain text).
-- "respuesta": The exact text of one correct option.
-- "explicacion": 2–5 sentences in plain English explaining why the correct choice improves the passage and why the others don’t.
+- "pasaje": A formal academic passage of **80 to 120 words ONLY** (strictly enforced). Topic must be related to science, history, or social studies. Count your words carefully. No less than 80, no more than 120.
+- The passage must allow for a question about improving **organization**, **clarity**, **transitions**, or **rhetorical effectiveness**.
+- "pregunta": One question targeting expression (e.g., combining sentences, improving clarity, transitions, or word choice).
+- "opciones": Exactly four unique and concise answer choices (plain text).
+- "respuesta": The exact text of one correct option from "opciones".
+- "explicacion": 2–5 sentences in plain English explaining why the correct answer is best and the others are not.
 - "categoria": Must be "Expression of Ideas".
 
-⚠️ Output Instructions:
+⚠️ Output Format Instructions:
 - Respond ONLY with a valid JSON object.
-- Do NOT include headings, notes, explanations, markdown, or comments.
-- The response MUST:
-  - Start with \`{\`
-  - End with \`}\`
+- DO NOT include any commentary, code blocks, or markdown formatting.
+- The JSON MUST:
+  - Start with \`{\` and end with \`}\`
   - Use only double quotes (")
-  - No markdown, no commentary
-  - Be valid JSON with no trailing commas
-  - "respuesta": Must be the exact text string of one of the four options. Do not use labels like "Option A", use the full answer.
-
+  - Contain NO markdown or extra text
+  - Be fully valid JSON
+  - Have "respuesta" match **exactly** one of the four options — do NOT use labels like "A" or "Option B", only the text.
 
 Use this exact format:
 {
-  "pasaje": "A formal, well-structured passage...",
+  "pasaje": "A formal, well-structured passage between 80–120 words...",
   "pregunta": "Which revision best improves the clarity of the sentence?",
-  "opciones": ["Option 1", "Option 2", "Option 3", "Option 4"],
-  "respuesta": "Option 1",
-  "explicacion": "Clear explanation of why it's correct.",
+  "opciones": ["First option text", "Second option text", "Third option text", "Fourth option text"],
+  "respuesta": "Second option text",
+  "explicacion": "Explanation of why this option is better.",
   "categoria": "Expression of Ideas"
 }
 

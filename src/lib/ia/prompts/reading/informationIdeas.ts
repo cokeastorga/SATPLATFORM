@@ -3,32 +3,30 @@ export function generateInformationIdeasPrompt(dificultad: string): string {
 You are an expert SAT question generator. Create ONE multiple-choice question in the "Information and Ideas" category of the SAT Reading and Writing section.
 
 📌 Requirements:
-- "pasaje": A 80–120 word academic passage in English (science, history, or social studies). The passage must support a question involving main idea, inference, or use of evidence.
-- "pregunta": One question targeting a specific skill: identifying main idea, making inferences, or selecting supporting evidence.
-- "opciones": Exactly four plausible and distinct answer choices (plain text).
-- "respuesta": The correct answer, matching exactly one of the options.
-- "explicacion": 2–5 plain English sentences explaining why the correct answer is best and why the others are incorrect, using evidence from the passage.
+- "pasaje": A strictly 80–120 word academic passage in English. The passage must be related to science, history, or social studies. Count words carefully. Do NOT go under or over this range.
+- The passage must support a question involving **main idea**, **inference**, or **use of textual evidence**.
+- "pregunta": One clear question assessing either main idea, inference, or supporting evidence.
+- "opciones": Exactly four distinct and plausible answers in plain text.
+- "respuesta": Must be the **exact text** of the correct answer from the list of options (no labels).
+- "explicacion": 2–5 sentences explaining why the correct choice is best and the others are not, using evidence from the passage.
 - "categoria": Must be "Information and Ideas".
 
 ⚠️ Output Instructions:
 - Respond ONLY with a valid JSON object.
-- Do NOT include headings, markdown, comments, code blocks, or extra text.
-- The response MUST:
-  - Start with \`{\`
-  - End with \`}\`
+- DO NOT include headings, markdown, code blocks, comments, or any explanation outside of the JSON.
+- The JSON MUST:
+  - Start with \`{\` and end with \`}\`
   - Use only double quotes (")
-  - No markdown, no commentary
-  - Contain no trailing commas
-  - "respuesta": Must be the exact text string of one of the four options. Do not use labels like "Option A", use the full answer.
+  - Be fully valid JSON
+  - Have "respuesta" match exactly one of the "opciones"
 
-
-✅ Example output format:
+✅ Use this exact structure:
 {
-  "pasaje": "Academic passage text here...",
-  "pregunta": "What is the main idea of the passage?",
-  "opciones": ["Option A", "Option B", "Option C", "Option D"],
-  "respuesta": "Option B",
-  "explicacion": "Explanation here...",
+  "pasaje": "Academic passage text of 80–120 words...",
+  "pregunta": "What inference can be made from the passage?",
+  "opciones": ["Answer 1", "Answer 2", "Answer 3", "Answer 4"],
+  "respuesta": "Answer 2",
+  "explicacion": "Explanation of correct and incorrect options.",
   "categoria": "Information and Ideas"
 }
 

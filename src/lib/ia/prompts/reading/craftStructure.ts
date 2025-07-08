@@ -3,33 +3,30 @@ export function generateCraftStructurePrompt(dificultad: string): string {
 You are an expert SAT test generator. Create ONE multiple-choice question in the "Craft and Structure" category of the Reading and Writing section.
 
 📌 Requirements:
-- "pasaje": A passage of 80–120 words (science, history, or social studies). Use proper spacing. No merged words.
+- "pasaje": A passage between **80 and 120 words ONLY** (strictly enforced). Use plain text from science, history, or social studies. Count your words carefully. Do not go under or over this range.
 - "pregunta": One question testing purpose, structure, tone, or word meaning.
 - "opciones": Four concise, unique answer choices (plain text).
-- "respuesta": The exact text matching one of the options.
-- "explicacion": 2–5 sentences in plain English explaining the correct choice and the incorrect ones.
+- "respuesta": The exact text string of one of the options (no labels).
+- "explicacion": 2–5 sentences explaining the correct and incorrect answers.
 - "categoria": Must be "Craft and Structure".
 - Difficulty: Use "${dificultad}" level.
 
 ⚠️ Output Rules:
-- Respond ONLY with a valid JSON object.
-- The response MUST:
-  - Start with '{'
-  - End with '}'
+- Output ONLY a valid JSON object.
+- The JSON MUST:
+  - Start with '{' and end with '}'
   - Use only double quotes (")
   - No markdown, no commentary
-  - Contain NO introductory text, comments, explanations, markdown or code blocks.
-  - Be fully valid JSON.
-  - "respuesta": Must be the exact text string of one of the four options. Do not use labels like "Option A", use the full answer.
+  - No labels like A/B/C — use full answer text
+  - Fully valid JSON format
+  - ASCII-safe only
 
-- Use only ASCII-safe characters and double quotes.
-
-✅ Example output format:
+✅ Example output:
 {
-  "pasaje": "Formal passage text...",
+  "pasaje": "Text between 80 and 120 words...",
   "pregunta": "What is the author’s main purpose?",
-  "opciones": ["A", "B", "C", "D"],
-  "respuesta": "A",
+  "opciones": ["Option 1", "Option 2", "Option 3", "Option 4"],
+  "respuesta": "Option 1",
   "explicacion": "Explanation here...",
   "categoria": "Craft and Structure"
 }
