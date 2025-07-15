@@ -10,17 +10,19 @@
     { nombre: 'Difícil', color: 'border-red-400 bg-red-50 text-red-800' }
   ];
 
-  function continuar() {
-    if (seleccion) dispatch('next');
-  }
+ function continuar() {
+  if (seleccion) dispatch('next', { seleccion });
+}
+
 
   function volver() {
     dispatch('back');
   }
 
   function seleccionarNivel(n: string) {
-    seleccion = n;
-  }
+  seleccion = n;
+  dispatch('seleccion', seleccion);
+}
 </script>
 
 <div class="space-y-6">

@@ -7,6 +7,8 @@ import { generateAlgebraPrompt } from '$lib/ia/prompts/math/algebra';
 import { generateAdvancedMathPrompt } from '$lib/ia/prompts/math/advancedMath';
 import { generateGeometryPrompt } from '$lib/ia/prompts/math/geometry';
 import { generateProblemSolvingPrompt } from '$lib/ia/prompts/math/problemSolving';
+import { temasStore } from '$lib/stores/temasStore'; // agrega esta línea arriba
+
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -35,7 +37,7 @@ function normalizarMateria(m: string): PreguntaSAT['materia'] {
   return normalized;
 }
 
-function getPrompt(materia: PreguntaSAT['materia'], dificultad: string): string {
+function getPrompt(materia: PreguntaSAT['materia'], dificultad: string, tema: string, subtema: string): string {
   const readingPrompts = [
     generateCraftStructurePrompt,
     generateInformationIdeasPrompt,
@@ -50,8 +52,10 @@ function getPrompt(materia: PreguntaSAT['materia'], dificultad: string): string 
   ];
   const generadores = materia === 'matematicas' ? mathPrompts : readingPrompts;
   const generador = generadores[Math.floor(Math.random() * generadores.length)];
-  return generador(dificultad);
+  // Ahora cada generador debe aceptar también tema y subtema
+  return generador(dificultad, tema, subtema);
 }
+
 
 function mapDifficulty(level: string): string {
   const map: Record<string, string> = {
@@ -92,7 +96,10 @@ export async function generarUnaPregunta(materia: string, dificultad: string): P
   }
 
   const dificultadPrompt = mapDifficulty(dificultad);
-  const prompt = getPrompt(materiaNormalizada, dificultadPrompt);
+ const temaObj = temasStore.nextTema();
+const tema = temaObj?.tema || 'General';
+const subtema = temaObj?.subtema || 'General';
+const prompt = getPrompt(materiaNormalizada, dificultadPrompt, tema, subtema);
 
   try {
     const response = await fetch('/api/generar-pregunta', {
@@ -161,7 +168,7 @@ export async function generarUnaPregunta(materia: string, dificultad: string): P
       const wordCount = p.pasaje.trim().split(/\s+/).length;
       if (materiaNormalizada === 'reading and writing') {
         const isStandardConventions = p.categoria === 'Standard English Conventions';
-        const expectedWordCount = isStandardConventions ? [20, 50] : [80, 120];
+        const expectedWordCount = isStandardConventions ? [20, 120] : [20, 120];
         if (wordCount < expectedWordCount[0] || wordCount > expectedWordCount[1]) {
           console.warn(`❌ Pasaje inválido: longitud fuera del rango (${expectedWordCount[0]}–${expectedWordCount[1]} palabras).`);
           pasajeValido = false;

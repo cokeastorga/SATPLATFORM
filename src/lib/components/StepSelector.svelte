@@ -2,38 +2,50 @@
   import { createEventDispatcher } from 'svelte';
   import { BookOpen, Calculator } from 'lucide-svelte';
 
-  export let seleccion = '';
+  export let seleccion: string = '';
+
   const dispatch = createEventDispatcher();
 
   const materias = [
-    { nombre: 'Math', icon: Calculator },
-    { nombre: 'Reading & Writing', icon: BookOpen }
-  ];
+  { nombre: 'matematicas', label: 'Math', icon: Calculator },
+  { nombre: 'reading and writing', label: 'Reading & Writing', icon: BookOpen }
+];
+
 
   function continuar() {
-    if (seleccion) dispatch('next');
-  }
+  if (seleccion) dispatch('next', { seleccion });
+}
 
-  function seleccionarMateria(materia: string) {
-    seleccion = materia;
-  }
+
+function seleccionarMateria(materia: string) {
+  seleccion = materia;
+  dispatch('seleccion', seleccion);
+}
+
+
+function volver() {
+  dispatch('back');
+}
+
+
 </script>
 
 <div class="space-y-5">
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-    {#each materias as { nombre, icon: Icon }}
-      <button
-        class={`flex items-center gap-4 p-4 border-2 rounded-xl w-full text-left transition-all duration-200 ${
-          seleccion === nombre
-            ? 'border-blue-600 bg-blue-50 text-blue-800 font-semibold'
-            : 'border-gray-200 hover:border-blue-300'
-        }`}
-        on:click={() => seleccionarMateria(nombre)}
-      >
-        <svelte:component this={Icon} class="w-6 h-6 text-blue-600" />
-        <span>{nombre}</span>
-      </button>
-    {/each}
+   {#each materias as { nombre, label, icon: Icon }}
+  <button
+    class={`flex items-center gap-4 p-4 border-2 rounded-xl w-full text-left transition-all duration-200 ${
+      seleccion === nombre
+        ? 'border-blue-600 bg-blue-50 text-blue-800 font-semibold'
+        : 'border-gray-200 hover:border-blue-300'
+    }`}
+    on:click={() => seleccionarMateria(nombre)}
+  >
+    <svelte:component this={Icon} class="w-6 h-6 text-blue-600" />
+    <span>{label}</span>
+  </button>
+{/each}
+
   </div>
 
   <div class="flex justify-end pt-4">

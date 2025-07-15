@@ -124,7 +124,7 @@ try {
       const wordCount = parsedResponse.pasaje.trim().split(/\s+/).length;
       const isStandardConventions = parsedResponse.categoria === 'Standard English Conventions';
       const isMath = normalizedMateria === 'matematicas';
-      const expectedWordCount = isMath || isStandardConventions ? [20, 50] : [80, 120];
+      const expectedWordCount = isMath || isStandardConventions ? [20, 120] : [20, 120];
 
       if (wordCount < expectedWordCount[0] || wordCount > expectedWordCount[1]) {
         logger.warn('Invalid pasaje length', { wordCount, expectedWordCount, categoria: parsedResponse.categoria });

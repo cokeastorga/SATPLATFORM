@@ -27,10 +27,18 @@
   let cargando = false;
   let preguntaActual = 0;
 
-  function normalizarMateriaUI(materia: string): PreguntaSAT['materia'] {
-    const normalized = materia.toLowerCase().trim();
-    return normalized === 'matemáticas' || normalized === 'matematicas' ? 'matematicas' : 'reading and writing';
+function normalizarMateriaUI(materia: string): PreguntaSAT['materia'] {
+  const normalized = materia.toLowerCase().trim();
+  if (normalized.includes('math') || normalized.includes('matematic')) {
+    return 'matematicas';
+  } 
+  if (normalized.includes('reading') || normalized.includes('writing')) {
+    return 'reading and writing';
   }
+  // Default fallback
+  return 'reading and writing';
+}
+
 
   async function generarSiguientePregunta() {
     if (preguntas.length >= maxPreguntas) return;
@@ -199,6 +207,7 @@
         <p class="text-center text-sm text-gray-600 mb-4">Pregunta {preguntaActual + 1} de {maxPreguntas}</p>
         <p class="text-center text-sm text-gray-600 mb-2">Modo seleccionado: <strong class="capitalize">{modo}</strong></p>
         <p class="text-center text-sm text-gray-600 mb-2">Materia: <strong>{materiaSeleccionada}</strong></p>
+        
         {#if preguntas[preguntaActual]?.categoria}
           <p class="text-center text-sm text-gray-600 mb-2">Categoría: <strong>{preguntas[preguntaActual].categoria}</strong></p>
         {/if}

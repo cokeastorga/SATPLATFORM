@@ -1,9 +1,10 @@
-export function generateStandardConventionsPrompt(dificultad: string): string {
+export function generateStandardConventionsPrompt(dificultad: string,tema: string, subtema: string): string {
   return `
 You are an expert SAT question generator. Create ONE multiple-choice question in the "Standard English Conventions" category of the SAT Reading and Writing section.
+Use ONLY the assigned topic: ${tema} (subtopic: ${subtema}). 
 
 📌 Requirements:
-- "pasaje": One or two academic-style sentences, totaling **between 20 and 150 words ONLY** (strictly enforced). The passage must contain at least **one error** in grammar, punctuation, or sentence structure (e.g., subject-verb agreement, modifier placement, comma usage, verb tense).
+- "pasaje": One or two academic-style sentences, totaling **between 20 and 120 words ONLY** (strictly enforced). The passage must contain at least **one error** in grammar, punctuation, or sentence structure (e.g., subject-verb agreement, modifier placement, comma usage, verb tense).
 - "pregunta": One question specifically targeting the error in the passage.
 - "opciones": Four different full-sentence versions. Only ONE must be fully correct; the others should be plausible but flawed.
 - "respuesta": Must be the **exact text** of the correct option from "opciones".
@@ -21,16 +22,11 @@ You are an expert SAT question generator. Create ONE multiple-choice question in
 
 ✅ Example output format:
 {
-  "pasaje": "The committee of experts have released its findings, which was unexpected.",
-  "pregunta": "Which revision best corrects the grammatical errors in the sentence?",
-  "opciones": [
-    "The committee of experts have released its findings, which was unexpected.",
-    "The committee of experts has released their findings, which were unexpected.",
-    "The committee of experts has released its findings, which were unexpected.",
-    "The committee of experts have released their findings, which was unexpected."
-  ],
-  "respuesta": "The committee of experts has released its findings, which were unexpected.",
-  "explicacion": "The subject 'committee' is singular and requires 'has'. The pronoun 'its' agrees with 'committee', and 'findings' is plural, requiring 'were'. The other options either mismatch subject-verb or pronoun-antecedent agreement.",
+  "pasaje": "Academic passage text of 20–120 words...",
+  "pregunta": "Question?",
+  "opciones": ["Option 1", "Option 2", "Option 3", "Option 4"],
+  "respuesta": "Option",
+  "explicacion": "Explanation of correct and incorrect options.",
   "categoria": "Standard English Conventions"
 }
 
