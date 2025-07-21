@@ -3,14 +3,16 @@ export function generateCraftStructurePrompt(dificultad: string, tema: string, s
 You are an expert SAT test generator. Create ONE multiple-choice question in the "Craft and Structure" category of the Reading and Writing section.
 
 
+“The passage, question, options, answer, and explanation must be written entirely in English. The response must be in JSON format.”{
+  "pasaje": "A passage between 40 and 100 words about a topic.",
+  "pregunta": "A question about the passage",
+  "opciones": ["Option 1", "Option 2", "Option 3", "Option 4"],
+  "respuesta": "Option 1",
+  "explicacion": "Explanation of correct and incorrect answers",
+  "categoria": "Craft and Structure",
+  "dificultad": "medium"
+}
 
-📌 Requirements:
-- "pasaje": A passage between **20 and 120 words ONLY** (strictly enforced). Count your words carefully. Do not go under or over this range.
-- "pregunta": One question testing purpose, structure, tone, or word meaning, directly requiring information from the passage.
-- "opciones": Four concise, unique answer choices (plain text, no labels).
-- "respuesta": The exact text string of one of the options (no labels).
-- "explicacion": 2–5 sentences explaining the correct and incorrect answers.
-- "categoria": Must be "Craft and Structure".
 - Difficulty: Use "${dificultad}" level (match official SAT standards: vocabulary, complexity, distractors, etc).
 Use ONLY the assigned topic: ${tema} (subtopic: ${subtema}).
 
@@ -24,14 +26,6 @@ Use ONLY the assigned topic: ${tema} (subtopic: ${subtema}).
   - No labels like A/B/C — use full answer text only
   - Fully valid JSON format
 
-✅ Example output:
-{
-  "pasaje": "Text between 20 and 120 words...",
-  "pregunta": "Question?",
-  "opciones": ["Option 1", "Option 2", "Option 3", "Option 4"],
-  "respuesta": "Option",
-  "explicacion": "Explanation here...",
-  "categoria": "Craft and Structure"
-}
+
 `.trim();
 }

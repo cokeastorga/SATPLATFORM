@@ -36,6 +36,9 @@ export async function POST({ request }) {
 
     prompt = customPrompt && typeof customPrompt === 'string' ? customPrompt : normalizedMateria === 'matematicas' ? getRandomMathPrompt(dificultad) : getRandomReadingPrompt(dificultad);
 
+    // Log del prompt para depuración
+    logger.debug('Prompt usado:', { prompt, materia, dificultad });
+
     const generationConfig = {
       temperature: 0.7,
       topP: 0.95,
@@ -46,11 +49,25 @@ export async function POST({ request }) {
 
     logger.debug('Generating content with prompt', { materia, dificultad, promptLength: prompt.length });
 
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig,
-      safetySettings
-    });
+    let result;
+    try {
+      result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig,
+        safetySettings
+      });
+    } catch (apiError) {
+      logger.error('Error en la llamada a la API de Gemini', {
+        error: apiError.message,
+        stack: apiError.stack,
+        code: apiError.code,
+        details: apiError.details || 'No details provided'
+      });
+      return json(
+        { error: 'Error al llamar a la API de Gemini', details: apiError.message, code: apiError.code },
+        { status: 500 }
+      );
+    }
 
     const responseText = result.response?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     if (!responseText) {
@@ -58,40 +75,32 @@ export async function POST({ request }) {
       return json({ error: 'No se recibió respuesta de Gemini', raw: result }, { status: 500 });
     }
 
-    logger.error('🔎 RESPUESTA CRUDA GEMINI', { responseText });
+    logger.debug('🔎 RESPUESTA CRUDA GEMINI', { responseText });
+    console.log('RAW GEMINI RESPONSE:', JSON.stringify(responseText, null, 2));
 
-    console.log('RAW GEMINI RESPONSE:', responseText);
+    // Limpieza mejorada
+    let textoLimpio = responseText
+      .replace(/^```json\n?/, '') // Elimina ```json
+      .replace(/\n```$/, '')      // Elimina ``` final
+      .replace(/[\r\n\t-\u001F\u007F-\u009F]+/g, '') // Elimina todos los caracteres de control
+      .replace(/\s{2,}/g, ' ')    // Colapsa múltiples espacios
+      .trim();
 
+    logger.debug('Texto limpio después de procesamiento:', { textoLimpio });
 
-
-    const jsonMatch = responseText.match(/\{[\s\S]*?\}|\[[\s\S]*?\]/);
-    if (!jsonMatch) {
-      logger.error('No valid JSON found in response', { responseText });
-      return json({ error: 'No se encontró un JSON válido en la respuesta', raw: responseText }, { status: 500 });
+    // Validar que sea un JSON potencialmente válido
+    if (!textoLimpio.startsWith('{') && !textoLimpio.startsWith('[')) {
+      logger.error('Texto limpio no parece JSON válido', { textoLimpio, responseText });
+      return json({ error: 'El texto limpio no es un JSON válido', raw: textoLimpio, responseText }, { status: 500 });
     }
 
-// ⬇️ SOLO limpieza mínima, no elimines comas ni saltos de línea.
-let textoLimpio = jsonMatch[0]
-  .replace(/\r/g, '')   // elimina retornos de carro (Windows)
-  .replace(/\t/g, ' ')  // convierte tabs en espacio, opcional
-  .trim();
-
-// Puedes dejar saltos de línea (\n) y comillas escapadas, ¡no rompen el JSON!
-
-
-    logger.error('❌ JSON parse fallido', {
-      textoLimpio,
-      responseText
-    });
-
-
-   let parsedResponse;
-try {
-  parsedResponse = JSON.parse(textoLimpio);
-} catch (e) {
-  logger.error('Error parsing cleaned JSON', { error: e.message, textoLimpio });
-  return json({ error: 'JSON inválido tras limpieza', raw: textoLimpio }, { status: 500 });
-}
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(textoLimpio);
+    } catch (e) {
+      logger.error('❌ JSON parse fallido', { error: e.message, textoLimpio, responseText });
+      return json({ error: 'JSON inválido tras limpieza', raw: textoLimpio, responseText }, { status: 500 });
+    }
 
     // Validate essential fields
     const camposEsperados = ['pregunta', 'opciones', 'respuesta', 'explicacion', 'categoria'];
@@ -107,7 +116,7 @@ try {
 
     // Validate opciones
     const opciones = Array.isArray(parsedResponse.opciones) ? parsedResponse.opciones : Object.values(parsedResponse.opciones);
-    logger.error('🔎 Opciones y respuesta:', { opciones, respuesta: parsedResponse.respuesta });
+    logger.debug('🔎 Opciones y respuesta:', { opciones, respuesta: parsedResponse.respuesta });
     if (opciones.length !== 4 || new Set(opciones).size !== 4) {
       logger.warn('Invalid opciones: must be 4 unique options', { opciones });
       return json({ error: 'Opciones inválidas: deben ser 4 opciones únicas', raw: parsedResponse }, { status: 500 });
@@ -124,7 +133,9 @@ try {
       const wordCount = parsedResponse.pasaje.trim().split(/\s+/).length;
       const isStandardConventions = parsedResponse.categoria === 'Standard English Conventions';
       const isMath = normalizedMateria === 'matematicas';
-      const expectedWordCount = isMath || isStandardConventions ? [20, 120] : [20, 120];
+      const expectedWordCount = isMath || isStandardConventions ? [25, 120] : [30, 120]; // Relajado para pruebas
+
+      logger.debug('Validando longitud del pasaje:', { wordCount, expectedWordCount, categoria: parsedResponse.categoria });
 
       if (wordCount < expectedWordCount[0] || wordCount > expectedWordCount[1]) {
         logger.warn('Invalid pasaje length', { wordCount, expectedWordCount, categoria: parsedResponse.categoria });
@@ -153,18 +164,20 @@ try {
       'Craft and Structure',
       'Information and Ideas',
       'Standard English Conventions',
-      'Expression of Ideas'
+      'Expression of Ideas',
+      'Underlined Words'
     ];
     if (!validCategorias.includes(parsedResponse.categoria)) {
       logger.warn('Invalid categoria', { categoria: parsedResponse.categoria });
       return json({ error: 'Categoría inválida', raw: parsedResponse }, { status: 500 });
     }
 
+    logger.debug('Respuesta válida, devolviendo JSON:', { parsedResponse });
     return json(parsedResponse, { status: 200 });
   } catch (error) {
     logger.error('Internal server error', { error: error.message, stack: error.stack });
     if (error.code === 'ERR_BLOCKED_BY_RESPONSE' && error.message.includes('Quota')) {
-      const retryAfter = 30; // Default retry delay
+      const retryAfter = 30;
       return json(
         { error: 'Cuota excedida', details: `Reintenta en ${retryAfter}s` },
         { status: 429 }

@@ -25,7 +25,11 @@
 }
 </script>
 
+<!-- DifficultySelector.svelte -->
 <div class="space-y-6">
+  <p class="text-gray-600 text-sm mb-4">
+    Selecciona la dificultad inicial para el Módulo 1. El Módulo 2 ajustará su dificultad según tu desempeño.
+  </p>
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     {#each niveles as { nombre, color }}
       <button
@@ -40,7 +44,6 @@
       </button>
     {/each}
   </div>
-
   <div class="flex justify-between pt-4">
     <button
       class="text-gray-600 hover:text-gray-900 border border-gray-400 px-4 py-2 rounded-full"
@@ -48,7 +51,6 @@
     >
       ← Volver
     </button>
-
     <button
       class="bg-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
       on:click={continuar}

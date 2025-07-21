@@ -168,7 +168,7 @@ const prompt = getPrompt(materiaNormalizada, dificultadPrompt, tema, subtema);
       const wordCount = p.pasaje.trim().split(/\s+/).length;
       if (materiaNormalizada === 'reading and writing') {
         const isStandardConventions = p.categoria === 'Standard English Conventions';
-        const expectedWordCount = isStandardConventions ? [20, 120] : [20, 120];
+        const expectedWordCount = isStandardConventions ? [25, 120] : [30, 120];
         if (wordCount < expectedWordCount[0] || wordCount > expectedWordCount[1]) {
           console.warn(`❌ Pasaje inválido: longitud fuera del rango (${expectedWordCount[0]}–${expectedWordCount[1]} palabras).`);
           pasajeValido = false;

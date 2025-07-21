@@ -72,7 +72,7 @@ function normalizarMateriaUI(materia: string): PreguntaSAT['materia'] {
 
   function configurarTest() {
     const materia = normalizarMateriaUI(materiaSeleccionada);
-    maxPreguntas = modo === 'ensayo' ? 20 : modo === 'desafio' ? 44 : 5;
+    maxPreguntas = modo === 'liviano' ? 5 : modo === 'ensayo' ? 54 : 44;
     tiempoTotalSegundos = calcularTiempoPorPregunta(maxPreguntas, materia);
     puntajeMaximo = 800;
     generarSiguientePregunta();
@@ -108,9 +108,20 @@ function normalizarMateriaUI(materia: string): PreguntaSAT['materia'] {
 
   function seleccionarModo(tipo: string) {
     modo = tipo;
-    cantidad = tipo === 'ensayo' ? 20 : tipo === 'desafio' ? 44 : 5;
+    cantidad = tipo === 'liviano' ? 5 : tipo === 'ensayo' ? 44 : 5;
     siguientePaso();
   }
+
+function badgeColorForCategory(cat: string) {
+  switch (cat) {
+    case 'Information and Ideas': return '#38bdf8'; // azul
+    case 'Expression of Ideas': return '#fde68a'; // amarillo suave
+    case 'Standard English Conventions': return '#fca5a5'; // rojo claro
+    case 'Craft and Structure': return '#c4b5fd'; // violeta
+    default: return '#a3a3a3'; // gris
+  }
+}
+
 
   function finalizarTest() {
     if (!preguntas.length) return;
@@ -154,18 +165,14 @@ function normalizarMateriaUI(materia: string): PreguntaSAT['materia'] {
 
     {:else if paso === 1}
       <h1 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-6 text-center">Paso 1: Elige tipo de test</h1>
-      <div class="grid gap-6 sm:grid-cols-3">
+      <div class="grid gap-6 sm:grid-cols-2">
         <button on:click={() => seleccionarModo('liviano')} class="bg-white border border-blue-200 shadow-md rounded-2xl p-6 hover:bg-blue-50 transition">
           <h2 class="text-2xl font-semibold text-blue-700 mb-2">Test Liviano</h2>
           <p class="text-gray-500">5 preguntas para practicar rápidamente.</p>
         </button>
-        <button on:click={() => seleccionarModo('ensayo')} class="bg-white border border-purple-200 shadow-md rounded-2xl p-6 hover:bg-purple-50 transition">
-          <h2 class="text-2xl font-semibold text-purple-700 mb-2">Ensayo SAT</h2>
-          <p class="text-gray-500">20 preguntas para simular un ensayo.</p>
-        </button>
-        <button on:click={() => seleccionarModo('desafio')} class="bg-white border border-red-200 shadow-md rounded-2xl p-6 hover:bg-red-50 transition">
+        <button on:click={() => seleccionarModo('ensayo')} class="bg-white border border-red-200 shadow-md rounded-2xl p-6 hover:bg-red-50 transition">
           <h2 class="text-2xl font-semibold text-red-700 mb-2">Desafío SAT</h2>
-          <p class="text-gray-500">Simulación completa del SAT (44 preguntas).</p>
+          <p class="text-gray-500">Simulación completa del SAT (44 y 54 preguntas).</p>
         </button>
       </div>
 
@@ -208,8 +215,28 @@ function normalizarMateriaUI(materia: string): PreguntaSAT['materia'] {
         <p class="text-center text-sm text-gray-600 mb-2">Modo seleccionado: <strong class="capitalize">{modo}</strong></p>
         <p class="text-center text-sm text-gray-600 mb-2">Materia: <strong>{materiaSeleccionada}</strong></p>
         
+        
         {#if preguntas[preguntaActual]?.categoria}
           <p class="text-center text-sm text-gray-600 mb-2">Categoría: <strong>{preguntas[preguntaActual].categoria}</strong></p>
+          <!-- Arriba del pasaje, bajo Materia/Categoría -->
+<div class="flex items-center justify-center gap-2 mb-1">
+  {#if preguntas[preguntaActual]?.categoria}
+    <span
+      class="inline-block rounded-full px-2 py-1 text-xs font-semibold"
+      style="background-color: {badgeColorForCategory(preguntas[preguntaActual].categoria)};"
+    >
+      {preguntas[preguntaActual].categoria}
+    </span>
+  {/if}
+
+  {#if preguntas[preguntaActual]?.tema && preguntas[preguntaActual]?.subtema}
+    <span class="text-xs text-gray-500">
+      <span class="font-bold">Tema:</span> {preguntas[preguntaActual].tema} | 
+      <span class="font-bold">Subtema:</span> {preguntas[preguntaActual].subtema}
+    </span>
+  {/if}
+</div>
+
         {/if}
         <p class="text-center text-xs text-gray-500 mb-2">Tiempo total asignado: {Math.floor(tiempoTotalSegundos / 60)} minutos</p>
 

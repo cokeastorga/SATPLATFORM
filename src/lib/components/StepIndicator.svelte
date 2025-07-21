@@ -1,7 +1,7 @@
 <script lang="ts">
   export let current = 1;
 
-  const steps = ['Materia', 'Nivel', 'Preguntas', 'Resultados'];
+  const steps = ['Categoria', 'Materia', 'Dificultad', 'SAT Test'];
 </script>
 
 <div class="mt-10 flex items-center justify-center space-x-4 sm:space-x-8 mb-6">
