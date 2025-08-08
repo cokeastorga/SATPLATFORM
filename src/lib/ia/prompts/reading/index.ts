@@ -9,13 +9,13 @@ import { generateUnderlinedWordsPrompt } from './UnderlinedWords';
  * mezclando uniformemente entre las cuatro categorías.
  */
 export function getRandomReadingPrompt(dificultad: string, tema: string, subtema: string): string {
-  const generadores = [
-    { generador: generateCraftStructurePrompt, peso: 0.28 }, // 26–30%
-    { generador: generateInformationIdeasPrompt, peso: 0.23 }, // 20–26%
-    { generador: generateStandardConventionsPrompt, peso: 0.26 }, // 24–28%
-    { generador: generateExpressionIdeasPrompt, peso: 0.20 },  // 18–22%
-    { generador: generateUnderlinedWordsPrompt, peso: 0.20 }  // 18–22%
-  ]; 
+const generadores = [
+  { generador: generateCraftStructurePrompt, peso: 0.26 },
+  { generador: generateInformationIdeasPrompt, peso: 0.22 },
+  { generador: generateStandardConventionsPrompt, peso: 0.25 },
+  { generador: generateExpressionIdeasPrompt, peso: 0.14 },
+  { generador: generateUnderlinedWordsPrompt, peso: 0.13 }
+];
   const rand = Math.random();
   let acumulado = 0;
   for (const { generador, peso } of generadores) {
